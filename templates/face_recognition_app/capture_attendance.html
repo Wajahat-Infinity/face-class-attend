@@ -1,0 +1,302 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Capture Attendance - Smart Attendance System{% endblock %}
+
+{% block extra_css %}
+<style>
+    #video-container {
+        position: relative;
+        background-color: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 4/3;
+    }
+    #video-message {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        font-size: 18px;
+        z-index: 10;
+    }
+    .detected-student {
+        transition: all 0.3s ease;
+    }
+    .detected-student:hover {
+        transform: translateX(5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-camera me-2"></i>Live Face Recognition
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if not selected_course %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="course" class="form-label">Select Course</label>
+                                    <select name="course" id="course" class="form-select" required>
+                                        <option value="">-- Select Course --</option>
+                                        {% for course in courses %}
+                                            <option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-camera-video me-1"></i> Start Attendance Capture
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Course: {{ selected_course.code }} - {{ selected_course.name }}</h5>
+                            <div class="text-muted small">Date: {% now "F j, Y" %}</div>
+                        </div>
+                        <form method="get">
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Change Course
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="row">
+                        <!-- Camera Feed -->
+                        <div class="col-md-8 mb-4">
+                            <div id="video-container">
+                                <video id="video" width="100%" height="100%" autoplay muted></video>
+                                <div id="video-message">
+                                    <div class="text-center">
+                                        <div class="spinner-border text-light mb-2" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p>Starting camera...</p>
+                                    </div>
+                                </div>
+                                <canvas id="canvas" style="display:none;"></canvas>
+                            </div>
+                            
+                            <div class="mt-3 d-flex gap-2">
+                                <button id="startBtn" class="btn btn-primary flex-grow-1">
+                                    <i class="bi bi-camera-video me-1"></i> Start Camera
+                                </button>
+                                <button id="captureBtn" class="btn btn-success flex-grow-1" disabled>
+                                    <i class="bi bi-camera me-1"></i> Capture Attendance
+                                </button>
+                                <button id="stopBtn" class="btn btn-outline-danger" disabled>
+                                    <i class="bi bi-stop-circle me-1"></i> Stop
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Detected Students -->
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Detected Students</h5>
+                                    <span id="student-count" class="badge bg-primary">0</span>
+                                </div>
+                                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                    <div id="detected-list">
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="bi bi-people fs-1 mb-2"></i>
+                                            <p>No students detected yet</p>
+                                            <p class="small">Capture faces to see detected students</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white">
+                                    <button id="markAttendanceBtn" class="btn btn-success w-100" disabled>
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Mark Attendance (<span id="mark-count">0</span> students)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if selected_course %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const courseId = "{{ selected_course.id }}";
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const videoContainer = document.getElementById('video-container');
+        const videoMessage = document.getElementById('video-message');
+        const startBtn = document.getElementById('startBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const markAttendanceBtn = document.getElementById('markAttendanceBtn');
+        const detectedList = document.getElementById('detected-list');
+        const studentCount = document.getElementById('student-count');
+        const markCount = document.getElementById('mark-count');
+        
+        let stream = null;
+        let detectedStudents = [];
+        
+        // Start camera
+        startBtn.addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+                videoMessage.style.display = 'none';
+                startBtn.disabled = true;
+                captureBtn.disabled = false;
+                stopBtn.disabled = false;
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                videoMessage.innerHTML = '<div class="text-center"><i class="bi bi-exclamation-triangle fs-1 mb-2"></i><p>Error accessing camera</p><p class="small">Please check camera permissions</p></div>';
+            }
+        });
+        
+        // Stop camera
+        stopBtn.addEventListener('click', function() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                videoMessage.innerHTML = '<div class="text-center"><i class="bi bi-camera-video-off fs-1 mb-2"></i><p>Camera stopped</p></div>';
+                videoMessage.style.display = 'flex';
+                startBtn.disabled = false;
+                captureBtn.disabled = true;
+                stopBtn.disabled = true;
+            }
+        });
+        
+        // Capture frame and process attendance
+        captureBtn.addEventListener('click', function() {
+            if (!stream) return;
+            
+            // Show processing message
+            videoMessage.innerHTML = '<div class="text-center"><div class="spinner-border text-light mb-2" role="status"></div><p>Processing faces...</p></div>';
+            videoMessage.style.display = 'flex';
+            
+            // Draw current video frame to canvas
+            const context = canvasElement.getContext('2d');
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            
+            // Convert canvas to blob
+            canvasElement.toBlob(function(blob) {
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.jpg');
+                formData.append('course_id', courseId);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                
+                // Send to server for processing
+                fetch('{% url "process_attendance" %}', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update detected students
+                        const newStudents = data.detected_students.filter(newStudent => 
+                            !detectedStudents.some(existingStudent => 
+                                existingStudent.student_id === newStudent.student_id
+                            )
+                        );
+                        
+                        detectedStudents = [...detectedStudents, ...newStudents];
+                        updateDetectedStudentsList();
+                        
+                        // Show success message
+                        const detected = data.detected_students.length;
+                        if (detected > 0) {
+                            videoMessage.innerHTML = `<div class="text-center text-success"><i class="bi bi-check-circle fs-1 mb-2"></i><p>Detected ${detected} student(s)!</p></div>`;
+                        } else {
+                            videoMessage.innerHTML = '<div class="text-center text-warning"><i class="bi bi-exclamation-circle fs-1 mb-2"></i><p>No students detected</p></div>';
+                        }
+                    } else {
+                        console.error('Error processing attendance:', data.error);
+                        videoMessage.innerHTML = '<div class="text-center text-danger"><i class="bi bi-exclamation-triangle fs-1 mb-2"></i><p>Error processing faces</p></div>';
+                    }
+                    
+                    // Hide message after 2 seconds
+                    setTimeout(() => {
+                        videoMessage.style.display = 'none';
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    videoMessage.innerHTML = '<div class="text-center text-danger"><i class="bi bi-exclamation-triangle fs-1 mb-2"></i><p>Server error</p></div>';
+                    setTimeout(() => {
+                        videoMessage.style.display = 'none';
+                    }, 2000);
+                });
+            }, 'image/jpeg');
+        });
+        
+        // Mark attendance button
+        markAttendanceBtn.addEventListener('click', function() {
+            if (detectedStudents.length === 0) return;
+            
+            window.location.href = "{% url 'attendance_records' %}";
+        });
+        
+        // Update detected students list
+        function updateDetectedStudentsList() {
+            if (detectedStudents.length === 0) {
+                detectedList.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-people fs-1 mb-2"></i>
+                        <p>No students detected yet</p>
+                        <p class="small">Capture faces to see detected students</p>
+                    </div>
+                `;
+                markAttendanceBtn.disabled = true;
+            } else {
+                let html = '';
+                detectedStudents.forEach(student => {
+                    html += `
+                        <div class="detected-student d-flex align-items-center justify-content-between p-2 border-bottom">
+                            <div>
+                                <div class="fw-medium">${student.name}</div>
+                                <div class="text-muted small">${student.student_id}</div>
+                            </div>
+                            <span class="badge ${student.confidence > 80 ? 'bg-success' : 'bg-warning'}">
+                                ${student.confidence}% match
+                            </span>
+                        </div>
+                    `;
+                });
+                detectedList.innerHTML = html;
+                markAttendanceBtn.disabled = false;
+            }
+            
+            // Update counters
+            studentCount.textContent = detectedStudents.length;
+            markCount.textContent = detectedStudents.length;
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

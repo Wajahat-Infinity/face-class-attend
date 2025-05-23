@@ -1,0 +1,159 @@
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Attendance Records - Smart Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-clipboard-data me-2"></i>Attendance Records
+                </h4>
+                <a href="#filterCollapse" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </a>
+            </div>
+            <div class="collapse" id="filterCollapse">
+                <div class="card-body border-bottom">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            {{ form.course|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.student_id|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.student_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.start_date|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.end_date|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="d-grid gap-2 d-md-flex w-100">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
+                                    <i class="bi bi-search me-1"></i> Search
+                                </button>
+                                <a href="{% url 'attendance_records' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-lg me-1"></i> Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Stats Summary -->
+                <div class="row mb-4 g-3">
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Total Records</h6>
+                                        <h4>{{ total_records }}</h4>
+                                    </div>
+                                    <i class="bi bi-clipboard text-primary fs-1 opacity-25"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Present</h6>
+                                        <h4>{{ present_count }}</h4>
+                                    </div>
+                                    <i class="bi bi-check-circle text-success fs-1 opacity-25"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Absent</h6>
+                                        <h4>{{ absent_count }}</h4>
+                                    </div>
+                                    <i class="bi bi-x-circle text-danger fs-1 opacity-25"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light border-0">
+                            <div class="card-body py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Late</h6>
+                                        <h4>{{ late_count }}</h4>
+                                    </div>
+                                    <i class="bi bi-clock text-warning fs-1 opacity-25"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Records Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Course</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                                <tr>
+                                    <td>{{ record.student.student_id }}</td>
+                                    <td>
+                                        <a href="{% url 'student_detail' record.student.id %}">
+                                            {{ record.student.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ record.course.code }} - {{ record.course.name }}</td>
+                                    <td>{{ record.date }}</td>
+                                    <td>{{ record.time }}</td>
+                                    <td>
+                                        {% if record.status == 'present' %}
+                                            <span class="badge bg-success">Present</span>
+                                        {% elif record.status == 'absent' %}
+                                            <span class="badge bg-danger">Absent</span>
+                                        {% elif record.status == 'late' %}
+                                            <span class="badge bg-warning text-dark">Late</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.confidence }}%</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="bi bi-clipboard-x fs-2 text-muted mb-2 d-block"></i>
+                                        <p>No attendance records found</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

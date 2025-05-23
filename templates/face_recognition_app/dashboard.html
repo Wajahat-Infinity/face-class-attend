@@ -1,0 +1,159 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Smart Attendance System{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1 class="display-5 fw-bold">Smart Attendance System</h1>
+    <p class="lead text-secondary">AI-Powered Face Recognition for Classroom Attendance</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4 g-4">
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body icon-card">
+                <div class="icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div>
+                    <h6 class="card-subtitle mb-1 text-muted">Total Students</h6>
+                    <h2 class="card-title">{{ total_students }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body icon-card">
+                <div class="icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <h6 class="card-subtitle mb-1 text-muted">Present Today</h6>
+                    <h2 class="card-title">{{ present_today }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body icon-card">
+                <div class="icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div>
+                    <h6 class="card-subtitle mb-1 text-muted">Total Courses</h6>
+                    <h2 class="card-title">{{ total_courses }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card h-100">
+            <div class="card-body icon-card">
+                <div class="icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div>
+                    <h6 class="card-subtitle mb-1 text-muted">Attendance Rate</h6>
+                    <h2 class="card-title">{{ attendance_rate }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-md-3">
+                        <a href="{% url 'capture_attendance' %}" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-camera mb-2 d-block fs-3"></i>
+                            Take Attendance
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'register_student' %}" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-person-plus mb-2 d-block fs-3"></i>
+                            Register Student
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'attendance_records' %}" class="btn btn-info btn-lg text-white w-100">
+                            <i class="bi bi-clipboard-data mb-2 d-block fs-3"></i>
+                            View Records
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'student_list' %}" class="btn btn-warning btn-lg text-dark w-100">
+                            <i class="bi bi-people mb-2 d-block fs-3"></i>
+                            Manage Students
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Registrations -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Registrations</h5>
+                <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_registrations %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Registered</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in recent_registrations %}
+                                    <tr>
+                                        <td>{{ student.student_id }}</td>
+                                        <td>{{ student.name }}</td>
+                                        <td>{{ student.course.name }}</td>
+                                        <td>{{ student.registration_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'student_detail' student.id %}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-person-plus-fill text-muted fs-1"></i>
+                        <p class="mt-2">No students registered yet</p>
+                        <a href="{% url 'register_student' %}" class="btn btn-primary">Register Student</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

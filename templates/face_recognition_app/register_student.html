@@ -1,0 +1,98 @@
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register Student - Smart Attendance System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-person-plus me-2"></i>Register New Student
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.student_id|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.course|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.photo.id_for_label }}" class="form-label">Student Photo</label>
+                            <div class="input-group">
+                                {{ form.photo }}
+                            </div>
+                            <div class="form-text">
+                                Upload a clear frontal face photo for face recognition
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus-fill me-1"></i> Register Student
+                                </button>
+                                <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Photo Taking Instructions -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Photo Taking Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Do:</h6>
+                        <ul>
+                            <li>Take a clear frontal face photo</li>
+                            <li>Ensure good lighting</li>
+                            <li>Have a neutral expression</li>
+                            <li>Remove glasses if possible</li>
+                            <li>Use a plain background</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Don't:</h6>
+                        <ul>
+                            <li>Take photos at extreme angles</li>
+                            <li>Use filters or effects</li>
+                            <li>Have multiple people in the photo</li>
+                            <li>Have poor lighting or shadows</li>
+                            <li>Cover facial features</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

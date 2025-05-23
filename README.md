@@ -1,73 +1,141 @@
-# Welcome to your Lovable project
 
-## Project info
+# Smart Attendance System with Face Recognition
 
-**URL**: https://lovable.dev/projects/7d8f5ff0-06c6-498d-912d-20e0bb601f70
+A Django-based attendance system that uses face recognition to automate student attendance tracking.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Face recognition for automatic attendance marking
+- Student registration with photo capture
+- Real-time attendance tracking
+- Comprehensive attendance reports
+- Student management
 
-**Use Lovable**
+## Installation Instructions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7d8f5ff0-06c6-498d-912d-20e0bb601f70) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Python 3.8 or higher
+- pip (Python package manager)
+- A webcam for face recognition
 
-**Use your preferred IDE**
+### Step 1: Clone the Repository
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+git clone <repository-url>
+cd attendance-system
 ```
 
-**Edit a file directly in GitHub**
+### Step 2: Create a Virtual Environment (Recommended)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# For Windows
+python -m venv venv
+venv\Scripts\activate
 
-**Use GitHub Codespaces**
+# For macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Step 3: Install Dependencies
 
-## What technologies are used for this project?
+```bash
+pip install -r requirements.txt
+```
 
-This project is built with:
+Note: Installing `dlib` might require additional setup:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- For Windows, you might need Visual C++ build tools
+- For Linux, you need to install build-essential and cmake
+- For macOS, you need Xcode command-line tools
 
-## How can I deploy this project?
+### Step 4: Database Setup
 
-Simply open [Lovable](https://lovable.dev/projects/7d8f5ff0-06c6-498d-912d-20e0bb601f70) and click on Share -> Publish.
+```bash
+python manage.py migrate
+```
 
-## Can I connect a custom domain to my Lovable project?
+### Step 5: Create Admin User
 
-Yes, you can!
+```bash
+python manage.py createsuperuser
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Step 6: Run the Development Server
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+python manage.py runserver
+```
+
+## Connecting to a Different Database
+
+By default, the system uses SQLite. To connect to a different database (like PostgreSQL or MySQL):
+
+1. Install the appropriate database adapter:
+
+```bash
+# For PostgreSQL
+pip install psycopg2-binary
+
+# For MySQL
+pip install mysqlclient
+```
+
+2. Edit the `DATABASES` setting in `attendance_system/settings.py`:
+
+```python
+# For PostgreSQL
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'your_database_name',
+        'USER': 'your_database_user',
+        'PASSWORD': 'your_database_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+
+# For MySQL
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'your_database_name',
+        'USER': 'your_database_user',
+        'PASSWORD': 'your_database_password',
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+```
+
+3. Run migrations:
+
+```bash
+python manage.py migrate
+```
+
+## Using Face Recognition with Real Data
+
+The system is set up to work with real face recognition data. Here's how it processes real data:
+
+1. During student registration, a face encoding is created from the student's photo
+2. The encoding is stored in the database as binary data
+3. When taking attendance, the system:
+   - Captures frames from the webcam
+   - Detects faces in the frame
+   - Compares face encodings with the stored ones
+   - Identifies students and marks attendance
+
+The confidence threshold can be adjusted in the code to make face recognition more or less strict.
+
+## Troubleshooting
+
+- **Face Recognition Issues**: Make sure there is good lighting when capturing photos and taking attendance
+- **Database Connection Issues**: Check your database credentials and that the database server is running
+- **Performance Issues**: Consider using a more powerful machine if face recognition is slow
+
+## License
+
+[MIT License](LICENSE)
